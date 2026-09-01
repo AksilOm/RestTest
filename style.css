@@ -1,45 +1,56 @@
-/* ==========================================================================
-   STYLE.CSS - MODERN RESPONSIVE RESTAURANT DIGITAL MENU
-   ==========================================================================
-   CSS Custom Properties at :root sync dynamically with menu-data.js
-   Mobile-first architecture tailored for instant QR code table access.
-   ========================================================================== */
+/* ============================================================================
+   STYLE.CSS - FLAT SOLID COLOR RESTAURANT DIGITAL MENU
+   ============================================================================
+   - Pure solid colors driven by :root CSS variables (No glassmorphism/blurs)
+   - Mobile-first architecture tailored for fast loading & QR code table scans
+   - Low-bandwidth / data-saver text-only fallback card support
+   ============================================================================ */
 
-/* --------------------------------------------------------------------------
-   1. COLOR PALETTE & DESIGN TOKENS
-   -------------------------------------------------------------------------- */
+/* ----------------------------------------------------------------------------
+   1. CSS CUSTOM PROPERTIES & COLOR PALETTE
+   ---------------------------------------------------------------------------- */
 :root {
-  /* Default fallbacks - overwritten dynamically by script.js using menu-data.js */
-  --color-primary: #141416;
-  --color-secondary: #f9f7f2;
-  --color-accent: #d4af37;
-  --color-accent-hover: #b59226;
-  --color-text: #1f1e1c;
-  --color-text-muted: #6e6b66;
-  --color-bg-light: #f4f0e8;
-  --color-card-bg: #ffffff;
-  --color-border: rgba(0, 0, 0, 0.08);
+  --color-primary: #141416;          /* Solid main dark color (header/footer) */
+  --color-secondary: #ffffff;        /* Solid container background */
+  --color-accent: #d4af37;           /* Gold theme accent */
+  --color-accent-hover: #b59226;     /* Gold accent hover */
+  --color-accent-light: #fef8eb;     /* Soft gold badge background */
+  --color-bg: #f5f4f0;              /* Solid body background */
+  --color-card: #ffffff;            /* Solid card background */
+  --color-text: #18191c;            /* Main text color */
+  --color-text-muted: #6e7078;       /* Secondary text color */
+  --color-border: #e2e0d9;          /* Solid border color */
+  --color-header-bg: #141416;       /* Solid header background */
+  --color-nav-bg: #ffffff;          /* Solid sticky nav background */
+  --color-btn-dark: #24252a;         /* Dark solid button */
 
-  /* Functional Theme Tokens */
-  --font-serif: 'Playfair Display', Georgia, serif;
-  --font-sans: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-  
+  /* Fonts */
+  --font-latin: 'Plus Jakarta Sans', system-ui, -apple-system, sans-serif;
+  --font-arabic: 'Tajawal', system-ui, sans-serif;
+  --font-main: var(--font-latin);
+
+  /* Tokens */
   --radius-sm: 8px;
-  --radius-md: 14px;
-  --radius-lg: 20px;
-  --radius-full: 9999px;
+  --radius-md: 12px;
+  --radius-lg: 18px;
+  --radius-pill: 9999px;
 
-  --shadow-sm: 0 2px 8px rgba(0, 0, 0, 0.05);
-  --shadow-md: 0 8px 24px rgba(0, 0, 0, 0.08);
-  --shadow-lg: 0 16px 36px rgba(0, 0, 0, 0.15);
+  --shadow-subtle: 0 1px 3px rgba(0, 0, 0, 0.04);
+  --shadow-card: 0 2px 8px rgba(0, 0, 0, 0.06);
+  --shadow-float: 0 4px 14px rgba(0, 0, 0, 0.1);
 
-  --transition-fast: 0.2s cubic-bezier(0.4, 0, 0.2, 1);
-  --transition-normal: 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  --transition-fast: 0.15s ease;
+  --transition-normal: 0.25s ease;
 }
 
-/* --------------------------------------------------------------------------
-   2. CORE RESET & BASE STYLES
-   -------------------------------------------------------------------------- */
+/* RTL Font Overrides */
+[dir="rtl"] {
+  --font-main: var(--font-arabic);
+}
+
+/* ----------------------------------------------------------------------------
+   2. RESET & GLOBAL STYLES
+   ---------------------------------------------------------------------------- */
 *, *::before, *::after {
   box-sizing: border-box;
   margin: 0;
@@ -47,26 +58,21 @@
 }
 
 html {
-  scroll-behavior: smooth;
-  scroll-padding-top: 130px; /* Offset for double sticky bar on mobile */
   font-size: 16px;
-  -webkit-tap-highlight-color: transparent;
+  scroll-behavior: smooth;
+  -webkit-text-size-adjust: 100%;
 }
 
 body {
-  font-family: var(--font-sans);
-  background-color: var(--color-bg-light);
+  font-family: var(--font-main);
+  background-color: var(--color-bg);
   color: var(--color-text);
-  line-height: 1.6;
+  line-height: 1.5;
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  text-align: start;
   -webkit-font-smoothing: antialiased;
-  -moz-osx-font-smoothing: grayscale;
-  overflow-x: hidden;
-}
-
-img {
-  max-width: 100%;
-  height: auto;
-  display: block;
 }
 
 a {
@@ -83,46 +89,69 @@ button {
 
 .container {
   width: 100%;
-  max-width: 1200px;
-  margin: 0 auto;
-  padding: 0 1.25rem;
+  max-width: 768px;
+  margin-inline: auto;
+  padding-inline: 16px;
 }
 
-/* --------------------------------------------------------------------------
-   3. HEADER (Sticky Navigation)
-   -------------------------------------------------------------------------- */
+/* ----------------------------------------------------------------------------
+   3. SOLID STICKY HEADER & LANGUAGE SWITCHER
+   ---------------------------------------------------------------------------- */
 .site-header {
   position: sticky;
   top: 0;
   z-index: 100;
-  background-color: rgba(20, 20, 22, 0.92);
-  backdrop-filter: blur(12px);
-  -webkit-backdrop-filter: blur(12px);
-  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+  background-color: var(--color-header-bg);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+  padding-block: 12px;
   color: #ffffff;
-  padding: 0.75rem 0;
-  transition: background-color var(--transition-normal);
 }
 
 .header-container {
   display: flex;
   align-items: center;
   justify-content: space-between;
+  gap: 12px;
+}
+
+.header-left {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.back-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+  border-radius: var(--radius-pill);
+  background-color: var(--color-btn-dark);
+  color: #ffffff;
+  font-size: 18px;
+  transition: var(--transition-fast);
+}
+
+.back-btn:active {
+  transform: scale(0.94);
+  background-color: var(--color-accent);
+}
+
+[dir="rtl"] .back-arrow {
+  transform: scaleX(-1);
+  display: inline-block;
 }
 
 .brand-link {
   display: flex;
   align-items: center;
-  gap: 0.75rem;
+  gap: 10px;
 }
 
-.brand-logo {
-  width: 42px;
-  height: 42px;
-  border-radius: var(--radius-sm);
-  object-fit: cover;
-  border: 1px solid var(--color-accent);
-  background-color: var(--color-primary);
+.brand-icon {
+  font-size: 24px;
+  line-height: 1;
 }
 
 .brand-text {
@@ -131,261 +160,153 @@ button {
 }
 
 .brand-name {
-  font-family: var(--font-serif);
-  font-size: 1.2rem;
+  font-size: 1.05rem;
   font-weight: 700;
-  line-height: 1.1;
-  color: #ffffff;
   letter-spacing: -0.01em;
+  color: #ffffff;
+  white-space: nowrap;
 }
 
 .brand-badge {
-  font-size: 0.68rem;
-  text-transform: uppercase;
-  letter-spacing: 0.08em;
-  color: var(--color-accent);
+  font-size: 0.7rem;
   font-weight: 600;
+  color: var(--color-accent);
+  letter-spacing: 0.02em;
+}
+
+.header-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
 }
 
 .header-action-btn {
   display: inline-flex;
   align-items: center;
-  gap: 0.4rem;
-  background: var(--color-accent);
-  color: var(--color-primary);
-  font-weight: 700;
+  gap: 6px;
+  padding: 6px 12px;
+  border-radius: var(--radius-pill);
   font-size: 0.82rem;
-  padding: 0.5rem 0.9rem;
-  border-radius: var(--radius-full);
-  transition: transform var(--transition-fast), background var(--transition-fast);
+  font-weight: 700;
+  transition: var(--transition-fast);
 }
 
-.header-action-btn:active {
-  transform: scale(0.95);
-}
-
-/* --------------------------------------------------------------------------
-   4. HERO SECTION
-   -------------------------------------------------------------------------- */
-.hero-section {
-  position: relative;
-  min-height: 420px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  text-align: center;
+.lang-toggle-btn {
+  background-color: var(--color-btn-dark);
   color: #ffffff;
-  padding: 4rem 1.25rem 3.5rem;
+  border: 1px solid rgba(212, 175, 55, 0.4);
+}
+
+.lang-toggle-btn:hover,
+.lang-toggle-btn:active {
+  background-color: var(--color-accent);
+  color: var(--color-primary);
+}
+
+.call-btn {
+  background-color: var(--color-accent);
+  color: var(--color-primary);
+}
+
+.call-btn:active {
+  transform: scale(0.94);
+}
+
+/* ----------------------------------------------------------------------------
+   4. HOME PAGE HERO SECTION
+   ---------------------------------------------------------------------------- */
+.hero-section {
   background-color: var(--color-primary);
-  overflow: hidden;
-}
-
-.hero-backdrop {
-  position: absolute;
-  inset: 0;
-  background-size: cover;
-  background-position: center;
-  opacity: 0.35;
-  filter: brightness(0.7) contrast(1.1);
-  transform: scale(1.05);
-  transition: transform 10s ease-out;
-}
-
-.hero-section:hover .hero-backdrop {
-  transform: scale(1);
-}
-
-.hero-overlay {
-  position: absolute;
-  inset: 0;
-  background: radial-gradient(circle at center, rgba(20,20,22,0.4) 0%, rgba(20,20,22,0.92) 100%);
-}
-
-.hero-content {
-  position: relative;
-  z-index: 2;
-  max-width: 680px;
+  color: #ffffff;
+  padding-block: 36px 40px;
+  text-align: center;
+  border-bottom-left-radius: var(--radius-lg);
+  border-bottom-right-radius: var(--radius-lg);
 }
 
 .hero-subheading {
   display: inline-block;
-  font-size: 0.85rem;
+  font-size: 0.78rem;
   text-transform: uppercase;
-  letter-spacing: 0.25em;
+  letter-spacing: 0.18em;
   color: var(--color-accent);
-  margin-bottom: 0.75rem;
-  font-weight: 600;
+  font-weight: 700;
+  margin-bottom: 8px;
 }
 
 .hero-title {
-  font-family: var(--font-serif);
-  font-size: clamp(2.2rem, 6vw, 3.8rem);
-  font-weight: 700;
-  line-height: 1.15;
-  margin-bottom: 1rem;
-  letter-spacing: -0.02em;
-  text-shadow: 0 2px 10px rgba(0,0,0,0.5);
+  font-size: 2.1rem;
+  font-weight: 800;
+  margin-bottom: 10px;
+  color: #ffffff;
 }
 
 .hero-tagline {
-  font-size: clamp(1rem, 2.5vw, 1.2rem);
-  color: rgba(255, 255, 255, 0.85);
-  margin-bottom: 2rem;
-  font-weight: 400;
-  max-width: 540px;
-  margin-left: auto;
-  margin-right: auto;
+  font-size: 0.95rem;
+  color: rgba(255, 255, 255, 0.82);
+  max-width: 500px;
+  margin-inline: auto;
+  margin-bottom: 24px;
+  line-height: 1.5;
 }
 
-.hero-buttons {
+.hero-actions-bar {
   display: flex;
   align-items: center;
   justify-content: center;
-  gap: 1rem;
-  flex-wrap: wrap;
+  gap: 12px;
 }
 
-/* Button Variants */
 .btn {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  gap: 0.5rem;
-  padding: 0.85rem 1.6rem;
-  border-radius: var(--radius-full);
-  font-weight: 600;
+  padding: 12px 26px;
+  border-radius: var(--radius-pill);
+  font-weight: 700;
   font-size: 0.95rem;
-  transition: all var(--transition-normal);
-  text-decoration: none;
+  transition: var(--transition-fast);
 }
 
 .btn-primary {
   background-color: var(--color-accent);
   color: var(--color-primary);
-  box-shadow: 0 4px 16px rgba(212, 175, 55, 0.3);
 }
 
-.btn-primary:hover {
+.btn-primary:hover,
+.btn-primary:active {
   background-color: var(--color-accent-hover);
-  transform: translateY(-2px);
-  box-shadow: 0 6px 20px rgba(212, 175, 55, 0.4);
+  transform: translateY(-1px);
 }
 
-.btn-outline {
-  background-color: rgba(255, 255, 255, 0.1);
-  color: #ffffff;
-  border: 1px solid rgba(255, 255, 255, 0.25);
-  backdrop-filter: blur(4px);
-}
-
-.btn-outline:hover {
-  background-color: rgba(255, 255, 255, 0.2);
-  border-color: #ffffff;
-}
-
-/* --------------------------------------------------------------------------
-   5. MENU CONTROL STICKY BAR (Search & Category Pills)
-   -------------------------------------------------------------------------- */
-.menu-controls-sticky {
+/* ----------------------------------------------------------------------------
+   5. SOLID STICKY CATEGORY NAV TAB BAR (PLAIN TEXT + ACTIVE UNDERLINE)
+   ---------------------------------------------------------------------------- */
+.category-nav-bar {
   position: sticky;
-  top: 61px; /* Height of header */
+  top: 61px;
   z-index: 90;
-  background-color: var(--color-secondary);
+  background-color: var(--color-nav-bg);
   border-bottom: 1px solid var(--color-border);
-  padding: 0.85rem 0 0.5rem;
-  box-shadow: var(--shadow-sm);
 }
 
-.search-filter-wrapper {
-  display: flex;
-  flex-direction: column;
-  gap: 0.75rem;
-  margin-bottom: 0.75rem;
-}
-
-.search-box {
-  position: relative;
+.category-nav-inner {
   display: flex;
   align-items: center;
-  width: 100%;
+  justify-content: space-between;
+  gap: 12px;
 }
 
-.search-icon {
-  position: absolute;
-  left: 1rem;
-  color: var(--color-text-muted);
-  pointer-events: none;
-}
-
-.search-box input {
-  width: 100%;
-  padding: 0.7rem 2.8rem 0.7rem 2.6rem;
-  border-radius: var(--radius-full);
-  border: 1px solid rgba(0, 0, 0, 0.12);
-  background-color: #ffffff;
-  font-family: inherit;
-  font-size: 0.92rem;
-  color: var(--color-text);
-  outline: none;
-  transition: border-color var(--transition-fast), box-shadow var(--transition-fast);
-}
-
-.search-box input:focus {
-  border-color: var(--color-accent);
-  box-shadow: 0 0 0 3px rgba(212, 175, 55, 0.2);
-}
-
-.clear-search-btn {
-  position: absolute;
-  right: 0.8rem;
-  font-size: 1.4rem;
-  color: var(--color-text-muted);
-  line-height: 1;
-  padding: 0.2rem 0.5rem;
-}
-
-/* Tag Pills */
-.tag-filters {
-  display: flex;
-  align-items: center;
-  gap: 0.4rem;
-  overflow-x: auto;
-  padding-bottom: 0.3rem;
-  scrollbar-width: none;
-  -ms-overflow-style: none;
-}
-
-.tag-filters::-webkit-scrollbar {
-  display: none;
-}
-
-.tag-pill {
-  white-space: nowrap;
-  font-size: 0.78rem;
-  font-weight: 600;
-  padding: 0.35rem 0.75rem;
-  border-radius: var(--radius-full);
-  background-color: #ffffff;
-  color: var(--color-text-muted);
-  border: 1px solid rgba(0, 0, 0, 0.08);
-  transition: all var(--transition-fast);
-}
-
-.tag-pill:hover, .tag-pill.active {
-  background-color: var(--color-primary);
-  color: #ffffff;
-  border-color: var(--color-primary);
-}
-
-/* Category Tabs (Horizontal Scroll) */
 .category-tabs {
   display: flex;
   align-items: center;
-  gap: 0.6rem;
+  gap: 1.5rem;
   overflow-x: auto;
-  padding: 0.3rem 0 0.5rem;
+  padding-block: 10px 12px;
   scrollbar-width: none;
   -ms-overflow-style: none;
+  -webkit-overflow-scrolling: touch;
+  flex: 1;
 }
 
 .category-tabs::-webkit-scrollbar {
@@ -394,496 +315,372 @@ button {
 
 .tab-btn {
   white-space: nowrap;
-  display: inline-flex;
-  align-items: center;
-  gap: 0.4rem;
-  font-size: 0.9rem;
-  font-weight: 600;
-  padding: 0.55rem 1.1rem;
-  border-radius: var(--radius-full);
-  background-color: transparent;
-  color: var(--color-text);
-  border: 1px solid transparent;
-  transition: all var(--transition-fast);
+  display: inline-block;
+  position: relative;
+  font-size: 0.92rem;
+  font-weight: 500;
+  letter-spacing: 0.03em;
+  padding-block: 4px 6px;
+  color: var(--color-text-muted);
+  text-decoration: none;
+  transition: color var(--transition-fast);
 }
 
 .tab-btn:hover {
-  background-color: rgba(0, 0, 0, 0.05);
+  color: var(--color-text);
+}
+
+.tab-btn::after {
+  content: "";
+  position: absolute;
+  bottom: -2px;
+  inset-inline-start: 0;
+  inset-inline-end: 0;
+  height: 2px;
+  background-color: var(--color-accent);
+  transform: scaleX(0);
+  transition: transform var(--transition-normal);
+  transform-origin: center;
 }
 
 .tab-btn.active {
-  background-color: var(--color-accent);
-  color: var(--color-primary);
+  color: var(--color-text);
   font-weight: 700;
-  box-shadow: 0 2px 10px rgba(212, 175, 55, 0.3);
 }
 
-/* --------------------------------------------------------------------------
-   6. MENU CONTAINER & CARDS
-   -------------------------------------------------------------------------- */
-.menu-display {
-  padding: 2rem 1.25rem 4rem;
+.tab-btn.active::after {
+  transform: scaleX(1);
 }
 
-.category-group {
-  margin-bottom: 3rem;
-  scroll-margin-top: 170px;
-}
-
-.category-header {
-  display: flex;
+/* Data Saver Toggle Switch in Nav Bar */
+.data-saver-btn {
+  display: inline-flex;
   align-items: center;
-  gap: 0.75rem;
-  margin-bottom: 1.5rem;
-  padding-bottom: 0.6rem;
-  border-bottom: 2px solid var(--color-accent);
-}
-
-.category-title {
-  font-family: var(--font-serif);
-  font-size: 1.75rem;
-  font-weight: 700;
-  color: var(--color-primary);
-}
-
-.category-icon {
-  font-size: 1.5rem;
-}
-
-.items-grid {
-  display: grid;
-  grid-template-columns: 1fr;
-  gap: 1.25rem;
-}
-
-/* Card Styling */
-.menu-card {
-  display: flex;
-  flex-direction: row;
-  background-color: var(--color-card-bg);
-  border-radius: var(--radius-md);
-  overflow: hidden;
-  box-shadow: var(--shadow-sm);
-  border: 1px solid var(--color-border);
-  transition: transform var(--transition-fast), box-shadow var(--transition-fast);
-  cursor: pointer;
-  position: relative;
-}
-
-.menu-card:hover {
-  transform: translateY(-3px);
-  box-shadow: var(--shadow-md);
-}
-
-.menu-card:active {
-  transform: scale(0.98);
-}
-
-.card-media {
-  width: 110px;
-  min-width: 110px;
-  height: 100%;
-  min-height: 120px;
-  position: relative;
-  background-color: var(--color-bg-light);
-  overflow: hidden;
-}
-
-.card-img {
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
-  transition: transform 0.5s ease;
-}
-
-.menu-card:hover .card-img {
-  transform: scale(1.08);
-}
-
-.card-body {
-  flex: 1;
-  padding: 1rem;
-  display: flex;
-  flex-direction: column;
-  justify-content: space-between;
-}
-
-.card-header-row {
-  display: flex;
-  align-items: flex-start;
-  justify-content: space-between;
-  gap: 0.75rem;
-  margin-bottom: 0.4rem;
-}
-
-.item-title {
-  font-family: var(--font-serif);
-  font-size: 1.15rem;
-  font-weight: 700;
-  color: var(--color-primary);
-  line-height: 1.25;
-}
-
-.item-price {
-  font-weight: 700;
-  font-size: 1.05rem;
-  color: var(--color-primary);
-  white-space: nowrap;
-  background-color: rgba(212, 175, 55, 0.15);
-  color: #7a600a;
-  padding: 0.2rem 0.6rem;
-  border-radius: var(--radius-sm);
-}
-
-.item-desc {
-  font-size: 0.85rem;
-  color: var(--color-text-muted);
-  line-height: 1.45;
-  margin-bottom: 0.75rem;
-  display: -webkit-box;
-  -webkit-line-clamp: 2;
-  -webkit-box-orient: vertical;
-  overflow: hidden;
-}
-
-.card-footer-row {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 0.5rem;
-  flex-wrap: wrap;
-}
-
-.badges-list {
-  display: flex;
-  align-items: center;
-  gap: 0.35rem;
-  flex-wrap: wrap;
-}
-
-.badge {
-  font-size: 0.7rem;
-  font-weight: 600;
-  padding: 0.15rem 0.5rem;
-  border-radius: var(--radius-sm);
-  background-color: var(--color-bg-light);
-  color: var(--color-text-muted);
-}
-
-.badge-chef { background-color: #fff3cd; color: #856404; }
-.badge-veg { background-color: #d4edda; color: #155724; }
-.badge-vegan { background-color: #d1e7dd; color: #0f5132; }
-.badge-gf { background-color: #e2e3e5; color: #383d41; }
-.badge-spicy { background-color: #f8d7da; color: #721c24; }
-
-.item-calories {
+  gap: 6px;
+  padding: 5px 10px;
+  border-radius: var(--radius-pill);
   font-size: 0.75rem;
+  font-weight: 600;
+  background-color: var(--color-bg);
   color: var(--color-text-muted);
-  font-weight: 500;
+  border: 1px solid var(--color-border);
+  white-space: nowrap;
+  flex-shrink: 0;
+  transition: var(--transition-fast);
 }
 
-/* No Results Banner */
-.no-results {
-  text-align: center;
-  padding: 4rem 1rem;
-  background: var(--color-card-bg);
-  border-radius: var(--radius-lg);
-  border: 1px dashed var(--color-border);
+.data-saver-btn.active {
+  background-color: var(--color-accent-light);
+  color: var(--color-accent-hover);
+  border-color: var(--color-accent);
 }
 
-.no-results-icon {
-  font-size: 3rem;
-  margin-bottom: 1rem;
+/* ----------------------------------------------------------------------------
+   6. HOME PAGE - INFORMATION CARDS
+   ---------------------------------------------------------------------------- */
+.main-content {
+  flex: 1;
+  padding-block: 24px 36px;
 }
 
-.no-results h3 {
-  font-family: var(--font-serif);
-  font-size: 1.4rem;
-  margin-bottom: 0.5rem;
-}
-
-.no-results p {
-  color: var(--color-text-muted);
-  margin-bottom: 1.5rem;
-}
-
-/* --------------------------------------------------------------------------
-   7. INFO SECTION (Hours, Address, Map)
-   -------------------------------------------------------------------------- */
-.info-section {
-  padding: 4rem 0;
-  background-color: #ffffff;
-  border-top: 1px solid var(--color-border);
-}
-
-.info-grid {
+.info-cards-grid {
   display: grid;
-  grid-template-columns: 1fr;
-  gap: 2rem;
+  grid-template-columns: repeat(1, 1fr);
+  gap: 16px;
+  margin-bottom: 28px;
 }
 
-.info-heading {
-  font-family: var(--font-serif);
-  font-size: 2rem;
-  font-weight: 700;
-  margin-bottom: 1.5rem;
-  color: var(--color-primary);
+@media (min-width: 600px) {
+  .info-cards-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
 }
 
-.info-item {
+.home-info-card {
+  background-color: var(--color-card);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  padding: 20px 18px;
+  box-shadow: var(--shadow-card);
   display: flex;
   align-items: flex-start;
-  gap: 1rem;
-  margin-bottom: 1.25rem;
+  gap: 14px;
 }
 
-.info-icon {
-  width: 42px;
-  height: 42px;
-  border-radius: 50%;
-  background-color: rgba(212, 175, 55, 0.15);
-  color: var(--color-accent-hover);
-  display: flex;
-  align-items: center;
-  justify-content: center;
+.home-info-icon {
+  font-size: 1.8rem;
+  line-height: 1;
   flex-shrink: 0;
 }
 
-.info-item h3 {
+.home-info-title {
   font-size: 1rem;
   font-weight: 700;
-  margin-bottom: 0.2rem;
+  color: var(--color-text);
+  margin-bottom: 4px;
 }
 
-.info-item p, .contact-link {
+.home-info-text {
+  font-size: 0.88rem;
   color: var(--color-text-muted);
-  font-size: 0.95rem;
+  line-height: 1.45;
 }
 
-.contact-link {
+.home-info-link {
   color: var(--color-accent-hover);
-  font-weight: 600;
-}
-
-.info-actions {
-  display: flex;
-  gap: 0.75rem;
-  margin-top: 2rem;
-  flex-wrap: wrap;
-}
-
-.map-card {
-  min-height: 320px;
-  border-radius: var(--radius-lg);
-  overflow: hidden;
-  box-shadow: var(--shadow-md);
-  border: 1px solid var(--color-border);
-}
-
-/* --------------------------------------------------------------------------
-   8. FOOTER
-   -------------------------------------------------------------------------- */
-.site-footer {
-  background-color: var(--color-primary);
-  color: rgba(255, 255, 255, 0.8);
-  padding: 3rem 0 2rem;
-  text-align: center;
-  border-top: 1px solid rgba(255, 255, 255, 0.1);
-}
-
-.footer-brand {
-  margin-bottom: 1.5rem;
-}
-
-.footer-name {
-  font-family: var(--font-serif);
-  font-size: 1.6rem;
   font-weight: 700;
-  color: #ffffff;
-  display: block;
-  margin-bottom: 0.3rem;
 }
 
-.footer-sub {
+.social-links-bar {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  margin-top: 10px;
+}
+
+.social-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  padding: 8px 16px;
+  border-radius: var(--radius-pill);
+  background-color: var(--color-card);
+  border: 1px solid var(--color-border);
   font-size: 0.85rem;
-  color: var(--color-accent);
+  font-weight: 600;
+  color: var(--color-text);
+  transition: var(--transition-fast);
 }
 
-.social-links {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 1.25rem;
-  margin-bottom: 2rem;
+.social-btn:hover {
+  border-color: var(--color-accent);
+  color: var(--color-accent-hover);
 }
 
-.social-icon {
-  width: 40px;
-  height: 40px;
-  border-radius: 50%;
-  background-color: rgba(255, 255, 255, 0.1);
+/* ----------------------------------------------------------------------------
+   7. CATEGORY PAGE - BANNER & ITEM CARDS
+   ---------------------------------------------------------------------------- */
+.category-banner {
+  background-color: var(--color-primary);
   color: #ffffff;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  transition: all var(--transition-fast);
+  padding: 22px 18px;
+  border-radius: var(--radius-md);
+  margin-bottom: 24px;
+  text-align: center;
 }
 
-.social-icon:hover {
-  background-color: var(--color-accent);
-  color: var(--color-primary);
+.category-banner-title {
+  font-size: 1.5rem;
+  font-weight: 800;
+  margin-bottom: 6px;
+  color: #ffffff;
+}
+
+.category-banner-desc {
+  font-size: 0.88rem;
+  color: rgba(255, 255, 255, 0.78);
+  max-width: 500px;
+  margin-inline: auto;
+}
+
+/* ── Item Grid: 2-col on mobile, 3-col on wide screens ── */
+.items-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 14px;
+}
+
+@media (min-width: 680px) {
+  .items-grid {
+    grid-template-columns: repeat(3, 1fr);
+    gap: 16px;
+  }
+}
+
+/* ── Item Card ── */
+.menu-item-card {
+  background-color: var(--color-card);
+  border-radius: var(--radius-md);
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  /* barely-there lift — no border, just 1 soft shadow */
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.07);
+  transition: box-shadow var(--transition-fast), transform var(--transition-fast);
+}
+
+.menu-item-card:hover {
+  box-shadow: 0 6px 18px rgba(0, 0, 0, 0.1);
   transform: translateY(-2px);
 }
 
-.footer-bottom {
-  font-size: 0.8rem;
-  color: rgba(255, 255, 255, 0.5);
-  border-top: 1px solid rgba(255, 255, 255, 0.08);
-  padding-top: 1.5rem;
-}
-
-.credit-line {
-  margin-top: 0.3rem;
-  font-size: 0.75rem;
-  color: rgba(255, 255, 255, 0.35);
-}
-
-/* --------------------------------------------------------------------------
-   9. MODAL DETAIL DIALOG
-   -------------------------------------------------------------------------- */
-.modal {
-  position: fixed;
-  inset: 0;
-  z-index: 1000;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  padding: 1rem;
-  opacity: 0;
-  visibility: hidden;
-  transition: opacity var(--transition-normal), visibility var(--transition-normal);
-}
-
-.modal.open {
-  opacity: 1;
-  visibility: visible;
-}
-
-.modal-backdrop {
-  position: absolute;
-  inset: 0;
-  background-color: rgba(0, 0, 0, 0.65);
-  backdrop-filter: blur(6px);
-}
-
-.modal-card {
-  position: relative;
-  z-index: 2;
+/* ── Image area (top of card) ── */
+.item-media {
   width: 100%;
-  max-width: 500px;
-  max-height: 85vh;
-  background-color: #ffffff;
-  border-radius: var(--radius-lg);
-  overflow-y: auto;
-  box-shadow: var(--shadow-lg);
-  transform: scale(0.92);
+  aspect-ratio: 4 / 3;
+  overflow: hidden;
+  background-color: var(--color-bg);
+  flex-shrink: 0;
+}
+
+.item-img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
   transition: transform var(--transition-normal);
 }
 
-.modal.open .modal-card {
-  transform: scale(1);
+.menu-item-card:hover .item-img {
+  transform: scale(1.04);
 }
 
-.modal-close {
-  position: absolute;
-  top: 1rem;
-  right: 1rem;
-  z-index: 10;
-  width: 36px;
-  height: 36px;
+/* ── Text content below image ── */
+.item-content {
+  padding: 12px 12px 10px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  flex: 1;
+}
+
+.item-name {
+  font-size: 0.97rem;
+  font-weight: 700;
+  color: var(--color-text);
+  line-height: 1.25;
+}
+
+.item-desc {
+  font-size: 0.78rem;
+  color: var(--color-text-muted);
+  line-height: 1.4;
+  /* clamp to 2 lines */
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+  flex: 1;
+}
+
+/* ── Price row with decorative badge ── */
+.item-footer-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-top: 8px;
+}
+
+.item-price {
+  font-size: 0.97rem;
+  font-weight: 800;
+  color: var(--color-accent-hover);
+}
+
+/* Decorative circular accent badge bottom-right */
+.item-badge {
+  width: 26px;
+  height: 26px;
   border-radius: 50%;
-  background-color: rgba(0, 0, 0, 0.5);
-  color: #ffffff;
-  font-size: 1.5rem;
+  background-color: var(--color-accent);
   display: flex;
   align-items: center;
   justify-content: center;
-  line-height: 1;
-}
-
-.modal-body-img {
-  width: 100%;
-  height: 240px;
-  object-fit: cover;
-}
-
-.modal-body-content {
-  padding: 1.5rem;
-}
-
-.modal-title-row {
-  display: flex;
-  justify-content: space-between;
-  align-items: flex-start;
-  gap: 1rem;
-  margin-bottom: 0.75rem;
-}
-
-.modal-item-title {
-  font-family: var(--font-serif);
-  font-size: 1.5rem;
-  font-weight: 700;
   color: var(--color-primary);
+  font-size: 0.75rem;
+  font-weight: 800;
+  flex-shrink: 0;
+  line-height: 1;
+  user-select: none;
 }
 
-.modal-item-price {
-  font-size: 1.25rem;
+/* ── Eco / Text-only mode: card without image ── */
+.menu-item-card.text-only {
+  /* stays vertical, just no image block */
+}
+
+.menu-item-card.text-only .item-media {
+  display: none;
+}
+
+.menu-item-card.text-only .item-content {
+  padding: 14px 14px 12px;
+}
+
+.menu-item-card.text-only .item-desc {
+  -webkit-line-clamp: unset;
+  line-clamp: unset;
+  overflow: visible;
+}
+
+/* ----------------------------------------------------------------------------
+   8. SOLID FOOTER
+   ---------------------------------------------------------------------------- */
+.site-footer {
+  background-color: var(--color-primary);
+  color: #ffffff;
+  padding-block: 28px 20px;
+  margin-top: auto;
+  border-top-left-radius: var(--radius-lg);
+  border-top-right-radius: var(--radius-lg);
+}
+
+.footer-grid {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  gap: 10px;
+}
+
+.footer-name {
+  font-size: 1.1rem;
   font-weight: 700;
-  color: #7a600a;
-  background-color: rgba(212, 175, 55, 0.15);
-  padding: 0.25rem 0.75rem;
-  border-radius: var(--radius-sm);
+  color: #ffffff;
+}
+
+.footer-sub {
+  font-size: 0.8rem;
+  color: var(--color-accent);
+  font-weight: 500;
+}
+
+.footer-bottom {
+  font-size: 0.75rem;
+  color: rgba(255, 255, 255, 0.5);
+  margin-top: 10px;
+}
+
+/* ----------------------------------------------------------------------------
+   ECO MODE TOAST NOTIFICATION
+   ---------------------------------------------------------------------------- */
+#eco-toast {
+  position: fixed;
+  top: 72px;
+  inset-inline-start: 50%;
+  transform: translateX(-50%);
+  z-index: 200;
+  background-color: var(--color-primary);
+  color: #ffffff;
+  padding: 10px 18px;
+  border-radius: var(--radius-pill);
+  font-size: 0.82rem;
+  font-weight: 600;
   white-space: nowrap;
+  box-shadow: var(--shadow-float);
+  border-inline-start: 3px solid var(--color-accent);
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.3s ease;
 }
 
-.modal-item-desc {
-  font-size: 0.95rem;
-  color: var(--color-text-muted);
-  line-height: 1.6;
-  margin-bottom: 1.25rem;
+[dir="rtl"] #eco-toast {
+  transform: translateX(50%);
 }
 
-/* --------------------------------------------------------------------------
-   10. MEDIA QUERIES (Responsive Desktop Scalability)
-   -------------------------------------------------------------------------- */
-@media (min-width: 640px) {
-  .items-grid {
-    grid-template-columns: repeat(2, 1fr);
-  }
-
-  .search-filter-wrapper {
-    flex-direction: row;
-    align-items: center;
-  }
-
-  .search-box {
-    max-width: 320px;
-  }
-}
-
-@media (min-width: 992px) {
-  .items-grid {
-    grid-template-columns: repeat(2, 1fr);
-    gap: 1.5rem;
-  }
-
-  .info-grid {
-    grid-template-columns: 1fr 1fr;
-    align-items: center;
-  }
-
-  .card-media {
-    width: 140px;
-    min-width: 140px;
-  }
+#eco-toast.visible {
+  opacity: 1;
 }

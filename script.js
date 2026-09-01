@@ -1,482 +1,420 @@
 /**
  * ============================================================================
- * SCRIPT.JS - DYNAMIC RESTAURANT MENU RENDERER & INTERACTION ENGINE
+ * SCRIPT.JS — RESTAURANT MENU ENGINE
  * ============================================================================
- * Reads data directly from menu-data.js (restaurant & menu objects)
- * Pure Vanilla JavaScript - No external libraries or build tools required.
+ * CHANGE 1: All styles use flat CSS variables (no JS needed).
+ * CHANGE 2: Home page (index.html) is info-only. Category pages are the menu.
+ * CHANGE 3: Low-bandwidth detection:
+ *   a) Network Information API (auto, where supported)
+ *   b) Image-load timeout probe (auto, runs once per page load)
+ *   c) Manual ⚡ Éco toggle (always visible, overrides auto decision)
  * ============================================================================
  */
 
-document.addEventListener('DOMContentLoaded', () => {
-  // Validate that menu-data.js loaded properly
-  if (typeof restaurant === 'undefined' || typeof menu === 'undefined') {
-    console.error("Error: 'restaurant' or 'menu' data object not found. Ensure menu-data.js is loaded before script.js.");
-    return;
-  }
+(function () {
+  'use strict';
 
-  // Application State
-  let currentCategory = 'all';
-  let currentTag = 'all';
-  let searchQuery = '';
-
-  // DOM Elements
-  const headerLogo = document.getElementById('header-logo');
-  const headerName = document.getElementById('header-name');
-  const headerCallBtn = document.getElementById('header-call-btn');
-
-  const heroBackdrop = document.getElementById('hero-backdrop');
-  const heroTitle = document.getElementById('hero-title');
-  const heroTagline = document.getElementById('hero-tagline');
-
-  const searchInput = document.getElementById('search-input');
-  const clearSearchBtn = document.getElementById('clear-search-btn');
-  const tagFiltersContainer = document.getElementById('tag-filters');
-  const categoryTabsContainer = document.getElementById('category-tabs');
-  const menuContainer = document.getElementById('menu-container');
-  const noResults = document.getElementById('no-results');
-  const resetFilterBtn = document.getElementById('reset-filter-btn');
-
-  const infoHours = document.getElementById('info-hours');
-  const infoAddress = document.getElementById('info-address');
-  const infoPhone = document.getElementById('info-phone');
-  const infoCallAction = document.getElementById('info-call-action');
-  const googleMapIframe = document.getElementById('google-map-iframe');
-
-  const footerName = document.getElementById('footer-restaurant-name');
-  const footerCopyName = document.getElementById('footer-copy-name');
-  const socialLinksContainer = document.getElementById('social-links');
-  const copyrightYear = document.getElementById('copyright-year');
-
-  const itemModal = document.getElementById('item-modal');
-  const modalBackdrop = document.getElementById('modal-backdrop');
-  const modalClose = document.getElementById('modal-close');
-  const modalBody = document.getElementById('modal-body');
-
-  /* ==========================================================================
-     1. DYNAMIC THEME INJECTION (Sync CSS variables with menu-data.js)
-     ========================================================================== */
-  function applyDynamicTheme(colors) {
-    if (!colors) return;
-    const rootStyle = document.documentElement.style;
-
-    if (colors.primary) rootStyle.setProperty('--color-primary', colors.primary);
-    if (colors.secondary) rootStyle.setProperty('--color-secondary', colors.secondary);
-    if (colors.accent) rootStyle.setProperty('--color-accent', colors.accent);
-    if (colors.accentHover) rootStyle.setProperty('--color-accent-hover', colors.accentHover);
-    if (colors.text) rootStyle.setProperty('--color-text', colors.text);
-    if (colors.textMuted) rootStyle.setProperty('--color-text-muted', colors.textMuted);
-    if (colors.bgLight) rootStyle.setProperty('--color-bg-light', colors.bgLight);
-    if (colors.cardBg) rootStyle.setProperty('--color-card-bg', colors.cardBg);
-  }
-
-  /* ==========================================================================
-     2. RENDER HEADER, HERO, & INFO SECTIONS
-     ========================================================================== */
-  function renderRestaurantDetails() {
-    // Header
-    if (headerName) headerName.textContent = restaurant.name || "Restaurant";
-    if (headerLogo) {
-      headerLogo.src = restaurant.logo || "";
-      headerLogo.onerror = () => { headerLogo.style.display = 'none'; };
-    }
-    if (headerCallBtn && restaurant.phone) {
-      headerCallBtn.href = `tel:${restaurant.phone.replace(/\s+/g, '')}`;
+  document.addEventListener('DOMContentLoaded', function () {
+    if (typeof restaurant === 'undefined' || typeof categories === 'undefined') {
+      console.error('menu-data.js must be loaded before script.js');
+      return;
     }
 
-    // Hero
-    if (heroTitle) heroTitle.textContent = restaurant.name || "Restaurant Menu";
-    if (heroTagline) heroTagline.textContent = restaurant.tagline || "Freshly Prepared Delights";
-    if (heroBackdrop && restaurant.heroImage) {
-      heroBackdrop.style.backgroundImage = `url('${restaurant.heroImage}')`;
-    }
+    /* -----------------------------------------------------------------------
+       CONSTANTS
+    ----------------------------------------------------------------------- */
+    var IMAGE_TIMEOUT_MS   = 4000;   // ms before an image is considered "slow"
+    var TIMEOUT_THRESHOLD  = 2;      // how many timed-out images trigger auto eco
+    var TOAST_DURATION_MS  = 4500;   // how long the toast stays visible
 
-    // Info Section
-    if (infoHours) infoHours.textContent = restaurant.hours || "Open Daily";
-    if (infoAddress) infoAddress.textContent = restaurant.address || "Main Street";
-    if (infoPhone && restaurant.phone) {
-      infoPhone.textContent = restaurant.phone;
-      infoPhone.href = `tel:${restaurant.phone.replace(/\s+/g, '')}`;
-    }
-    if (infoCallAction && restaurant.phone) {
-      infoCallAction.href = `tel:${restaurant.phone.replace(/\s+/g, '')}`;
-    }
-    if (googleMapIframe && restaurant.googleMapsEmbed) {
-      googleMapIframe.src = restaurant.googleMapsEmbed;
-    }
+    /* -----------------------------------------------------------------------
+       STATE
+    ----------------------------------------------------------------------- */
+    var urlParams = new URLSearchParams(window.location.search);
+    var currentLang =
+      urlParams.get('lang') === 'ar'
+        ? 'ar'
+        : sessionStorage.getItem('menu_lang') === 'ar'
+        ? 'ar'
+        : 'fr';
 
-    // Footer
-    if (footerName) footerName.textContent = restaurant.name;
-    if (footerCopyName) footerCopyName.textContent = restaurant.name;
-    if (copyrightYear) copyrightYear.textContent = new Date().getFullYear();
-
-    // Social Links
-    if (socialLinksContainer && restaurant.socialLinks) {
-      const links = restaurant.socialLinks;
-      let html = '';
-
-      if (links.instagram) {
-        html += `<a href="${links.instagram}" target="_blank" rel="noopener" class="social-icon" aria-label="Instagram">
-          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect width="20" height="20" x="2" y="2" rx="5" ry="5"/><path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z"/><line x1="17.5" x2="17.51" y1="6.5" y2="6.5"/></svg>
-        </a>`;
-      }
-      if (links.facebook) {
-        html += `<a href="${links.facebook}" target="_blank" rel="noopener" class="social-icon" aria-label="Facebook">
-          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 2h-3a5 5 0 0 0-5 5v3H7v4h3v8h4v-8h3l1-4h-4V7a1 1 0 0 1 1-1h3z"/></svg>
-        </a>`;
-      }
-      if (links.whatsapp) {
-        html += `<a href="${links.whatsapp}" target="_blank" rel="noopener" class="social-icon" aria-label="WhatsApp">
-          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 21l1.65-3.8a9 9 0 1 1 3.4 2.9L3 21"/><path d="M9 10a.5.5 0 0 0 1 0V9a.5.5 0 0 0-1 0v1a5 5 0 0 0 5 5h1a.5.5 0 0 0 0-1h-1a.5.5 0 0 0 0 1"/></svg>
-        </a>`;
-      }
-      socialLinksContainer.innerHTML = html;
-    }
-  }
-
-  /* ==========================================================================
-     3. RENDER CATEGORY TABS
-     ========================================================================== */
-  function renderCategoryTabs() {
-    if (!categoryTabsContainer) return;
-
-    let tabsHtml = `<button class="tab-btn active" data-category="all">
-      <span>🍽️</span> All Items
-    </button>`;
-
-    menu.forEach(group => {
-      tabsHtml += `<button class="tab-btn" data-category="${group.id}">
-        <span>${group.icon || '📌'}</span> ${group.category}
-      </button>`;
-    });
-
-    categoryTabsContainer.innerHTML = tabsHtml;
-
-    // Attach click listeners to tabs
-    const tabButtons = categoryTabsContainer.querySelectorAll('.tab-btn');
-    tabButtons.forEach(btn => {
-      btn.addEventListener('click', () => {
-        const catId = btn.getAttribute('data-category');
-        setActiveCategoryTab(catId);
-
-        if (catId === 'all') {
-          window.scrollTo({ top: document.getElementById('menu').offsetTop - 110, behavior: 'smooth' });
-        } else {
-          const targetElem = document.getElementById(`cat-${catId}`);
-          if (targetElem) {
-            targetElem.scrollIntoView({ behavior: 'smooth' });
-          }
-        }
-      });
-    });
-  }
-
-  function setActiveCategoryTab(catId) {
-    currentCategory = catId;
-    const tabButtons = categoryTabsContainer.querySelectorAll('.tab-btn');
-    tabButtons.forEach(btn => {
-      if (btn.getAttribute('data-category') === catId) {
-        btn.classList.add('active');
-        btn.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'center' });
+    // Initial data-saver state — Network API first, then manual sessionStorage
+    var dataSaverOn = false;
+    var networkApiSupported = false;
+    (function initDataSaver() {
+      var conn = navigator.connection || navigator.mozConnection || navigator.webkitConnection;
+      if (conn) {
+        networkApiSupported = true;
+        dataSaverOn = conn.effectiveType === 'slow-2g' || conn.effectiveType === '2g';
+        sessionStorage.setItem('data_saver', dataSaverOn ? '1' : '0');
       } else {
-        btn.classList.remove('active');
+        // Restore manual choice from previous interaction
+        dataSaverOn = sessionStorage.getItem('data_saver') === '1';
       }
-    });
-  }
+    })();
 
-  /* ==========================================================================
-     4. RENDER MENU ITEMS GRID
-     ========================================================================== */
-  function renderMenuItems() {
-    if (!menuContainer) return;
+    var pageCategory = document.body.dataset.category || 'home';
+    var isMenuPage   = pageCategory !== 'home';
 
-    let totalVisibleItems = 0;
-    let menuHtml = '';
+    // Image timeout probe runs once; flag prevents repeating
+    var probeRan = false;
 
-    menu.forEach(group => {
-      // Filter items in this category based on search query and tag selection
-      const filteredItems = group.items.filter(item => {
-        // Tag filter check
-        let matchesTag = true;
-        if (currentTag !== 'all') {
-          matchesTag = item.badges && item.badges.includes(currentTag);
-        }
+    /* -----------------------------------------------------------------------
+       HELPERS
+    ----------------------------------------------------------------------- */
+    function getText(obj) {
+      if (!obj) return '';
+      if (typeof obj === 'string') return obj;
+      return obj[currentLang] || obj['fr'] || '';
+    }
 
-        // Search query check
-        let matchesSearch = true;
-        if (searchQuery.trim() !== '') {
-          const query = searchQuery.toLowerCase();
-          const nameMatch = item.name.toLowerCase().includes(query);
-          const descMatch = item.description && item.description.toLowerCase().includes(query);
-          matchesSearch = nameMatch || descMatch;
-        }
+    function langUrl(base) {
+      return currentLang === 'ar' ? base + '?lang=ar' : base;
+    }
 
-        return matchesTag && matchesSearch;
-      });
+    /* -----------------------------------------------------------------------
+       DOM REFS
+    ----------------------------------------------------------------------- */
+    var htmlEl           = document.documentElement;
+    var langToggleBtn    = document.getElementById('lang-toggle-btn');
+    var langToggleText   = document.getElementById('lang-toggle-text');
+    var headerName       = document.getElementById('header-name');
+    var headerBadge      = document.getElementById('header-badge');
+    var headerCallText   = document.getElementById('header-call-text');
+    var backLink         = document.getElementById('back-link');
+    var footerName       = document.getElementById('footer-restaurant-name');
+    var footerSub        = document.getElementById('footer-sub');
+    var footerCopyright  = document.getElementById('footer-copyright');
 
-      if (filteredItems.length > 0) {
-        totalVisibleItems += filteredItems.length;
+    // Home-only
+    var heroSubheading   = document.getElementById('hero-subheading');
+    var heroTitle        = document.getElementById('hero-title');
+    var heroTagline      = document.getElementById('hero-tagline');
+    var seeMenuText      = document.getElementById('see-menu-text');
+    var seeMenuBtn       = document.getElementById('see-menu-btn');
+    var infoHoursTitle   = document.getElementById('info-hours-title');
+    var infoHours        = document.getElementById('info-hours');
+    var infoAddressTitle = document.getElementById('info-address-title');
+    var infoAddress      = document.getElementById('info-address');
+    var infoPhoneTitle   = document.getElementById('info-phone-title');
+    var infoPhone        = document.getElementById('info-phone');
+    var socialLinksTitle = document.getElementById('social-links-title');
 
-        menuHtml += `
-          <div class="category-group" id="cat-${group.id}">
-            <div class="category-header">
-              <span class="category-icon">${group.icon || '🍽️'}</span>
-              <h2 class="category-title">${group.category}</h2>
-            </div>
-            <div class="items-grid">
-        `;
+    // Menu-page-only
+    var categoryNavTabs   = document.getElementById('category-tabs');
+    var categoryTitle     = document.getElementById('category-title');
+    var categoryDesc      = document.getElementById('category-desc');
+    var categoryItemsGrid = document.getElementById('category-items-grid');
+    var dataSaverBtn      = document.getElementById('data-saver-btn');
+    var dataSaverText     = document.getElementById('data-saver-text');
 
-        filteredItems.forEach(item => {
-          menuHtml += createItemCardHtml(item);
+    /* -----------------------------------------------------------------------
+       TOAST NOTIFICATION (eco mode auto-activated)
+    ----------------------------------------------------------------------- */
+    function showEcoToast() {
+      // Create toast element once
+      var existing = document.getElementById('eco-toast');
+      if (existing) existing.parentNode.removeChild(existing);
+
+      var toast = document.createElement('div');
+      toast.id = 'eco-toast';
+      toast.textContent = currentLang === 'ar'
+        ? 'تم تفعيل الوضع الاقتصادي — تم اكتشاف اتصال بطيء'
+        : 'Mode économique activé — connexion lente détectée';
+      document.body.appendChild(toast);
+
+      // Fade in on next frame
+      requestAnimationFrame(function () {
+        requestAnimationFrame(function () {
+          toast.classList.add('visible');
         });
+      });
 
-        menuHtml += `
-            </div>
-          </div>
-        `;
+      // Fade out + remove
+      setTimeout(function () {
+        toast.classList.remove('visible');
+        setTimeout(function () {
+          if (toast.parentNode) toast.parentNode.removeChild(toast);
+        }, 350);
+      }, TOAST_DURATION_MS);
+    }
+
+    /* -----------------------------------------------------------------------
+       ACTIVATE ECO MODE PROGRAMMATICALLY (auto or manual)
+    ----------------------------------------------------------------------- */
+    function activateEcoMode(showToast) {
+      dataSaverOn = true;
+      sessionStorage.setItem('data_saver', '1');
+      updateDataSaverBtn();
+      renderCategoryPage();
+      if (showToast) showEcoToast();
+    }
+
+    function deactivateEcoMode() {
+      dataSaverOn = false;
+      sessionStorage.setItem('data_saver', '0');
+      updateDataSaverBtn();
+      renderCategoryPage();
+    }
+
+    /* -----------------------------------------------------------------------
+       IMAGE TIMEOUT PROBE
+       Runs once after cards are rendered in normal (image) mode.
+       Probes each item image with a hidden <img> — if enough time out,
+       auto-activates eco mode and shows a toast.
+    ----------------------------------------------------------------------- */
+    function runImageTimeoutProbe(imageUrls) {
+      if (probeRan || dataSaverOn || imageUrls.length === 0) return;
+      probeRan = true;
+
+      var total       = imageUrls.length;
+      var timedOut    = 0;
+      var settled     = 0;
+      var autoTriggered = false;
+
+      function onSettled(wasTimeout) {
+        if (autoTriggered) return; // already switched, stop counting
+        if (wasTimeout) timedOut++;
+        settled++;
+
+        // Trigger if threshold met
+        if (timedOut >= TIMEOUT_THRESHOLD) {
+          autoTriggered = true;
+          activateEcoMode(true); // true = show toast
+          return;
+        }
+
+        // All probes done and threshold not reached — leave normal mode
       }
-    });
 
-    if (totalVisibleItems === 0) {
-      menuContainer.innerHTML = '';
-      if (noResults) noResults.hidden = false;
-    } else {
-      if (noResults) noResults.hidden = true;
-      menuContainer.innerHTML = menuHtml;
-      attachCardClickEvents();
-    }
-  }
+      imageUrls.forEach(function (url) {
+        var img    = new Image();
+        var tid    = null;
+        var done   = false;
 
-  function createItemCardHtml(item) {
-    // Generate badges HTML
-    let badgesHtml = '';
-    if (item.badges && item.badges.length > 0) {
-      badgesHtml = '<div class="badges-list">';
-      item.badges.forEach(b => {
-        let badgeClass = 'badge';
-        if (b.includes('Chef')) badgeClass += ' badge-chef';
-        else if (b.includes('Veg')) badgeClass += ' badge-veg';
-        else if (b.includes('Vegan')) badgeClass += ' badge-vegan';
-        else if (b.includes('Gluten')) badgeClass += ' badge-gf';
-        else if (b.includes('Spicy')) badgeClass += ' badge-spicy';
-        badgesHtml += `<span class="${badgeClass}">${b}</span>`;
+        function finish(timedout) {
+          if (done) return;
+          done = true;
+          if (tid) clearTimeout(tid);
+          img.onload = img.onerror = null;
+          img.src = ''; // stop any pending request
+          onSettled(timedout);
+        }
+
+        tid = setTimeout(function () { finish(true);  }, IMAGE_TIMEOUT_MS);
+        img.onload  = function () { finish(false); };
+        img.onerror = function () { finish(false); }; // broken URLs don't count as slow
+        img.src = url;
       });
-      badgesHtml += '</div>';
     }
 
-    // Media HTML (if image exists or placeholder)
-    let mediaHtml = '';
-    if (item.image) {
-      mediaHtml = `
-        <div class="card-media">
-          <img src="${item.image}" alt="${item.name}" class="card-img" loading="lazy">
-        </div>
-      `;
-    } else {
-      mediaHtml = `
-        <div class="card-media" style="display:flex;align-items:center;justify-content:center;font-size:1.8rem;color:var(--color-accent);">
-          <span>🍲</span>
-        </div>
-      `;
+    /* -----------------------------------------------------------------------
+       DATA SAVER BUTTON — MANUAL TOGGLE
+    ----------------------------------------------------------------------- */
+    function updateDataSaverBtn() {
+      if (!dataSaverBtn || !dataSaverText) return;
+      var isAr  = currentLang === 'ar';
+      var label = isAr ? 'اقتصادي' : 'Éco';
+      dataSaverText.textContent = label;
+      if (dataSaverOn) {
+        dataSaverBtn.classList.add('active');
+        dataSaverBtn.title = isAr ? 'وضع توفير البيانات مفعّل — انقر للإلغاء' : 'Mode économique actif — cliquer pour désactiver';
+      } else {
+        dataSaverBtn.classList.remove('active');
+        dataSaverBtn.title = isAr ? 'وضع توفير البيانات' : 'Mode économique de données';
+      }
     }
 
-    return `
-      <article class="menu-card" data-item-id="${item.id}" role="button" tabindex="0">
-        ${mediaHtml}
-        <div class="card-body">
-          <div>
-            <div class="card-header-row">
-              <h3 class="item-title">${item.name}</h3>
-              <span class="item-price">${item.price}</span>
-            </div>
-            <p class="item-desc">${item.description || ''}</p>
-          </div>
-          <div class="card-footer-row">
-            ${badgesHtml}
-            ${item.calories ? `<span class="item-calories">${item.calories}</span>` : ''}
-          </div>
-        </div>
-      </article>
-    `;
-  }
-
-  /* ==========================================================================
-     5. INTERACTIVE MODAL (Quick Dish View)
-     ========================================================================== */
-  function attachCardClickEvents() {
-    const cards = menuContainer.querySelectorAll('.menu-card');
-    cards.forEach(card => {
-      card.addEventListener('click', () => {
-        const itemId = parseInt(card.getAttribute('data-item-id'), 10);
-        openItemModal(itemId);
-      });
-
-      card.addEventListener('keydown', (e) => {
-        if (e.key === 'Enter' || e.key === ' ') {
-          e.preventDefault();
-          const itemId = parseInt(card.getAttribute('data-item-id'), 10);
-          openItemModal(itemId);
+    if (dataSaverBtn) {
+      dataSaverBtn.addEventListener('click', function () {
+        if (dataSaverOn) {
+          // Manual OFF → reload images
+          deactivateEcoMode();
+        } else {
+          // Manual ON → skip images immediately, no toast (user chose it)
+          activateEcoMode(false);
         }
       });
-    });
-  }
+    }
 
-  function openItemModal(itemId) {
-    let foundItem = null;
-    for (const group of menu) {
-      const match = group.items.find(i => i.id === itemId);
-      if (match) {
-        foundItem = match;
-        break;
+    /* -----------------------------------------------------------------------
+       LANGUAGE APPLY
+    ----------------------------------------------------------------------- */
+    function applyLanguage(lang) {
+      currentLang = lang;
+      sessionStorage.setItem('menu_lang', currentLang);
+
+      var isAr = currentLang === 'ar';
+      htmlEl.setAttribute('dir', isAr ? 'rtl' : 'ltr');
+      htmlEl.setAttribute('lang', currentLang);
+
+      var newUrl = new URL(window.location);
+      if (isAr) newUrl.searchParams.set('lang', 'ar');
+      else       newUrl.searchParams.delete('lang');
+      window.history.replaceState({}, '', newUrl);
+
+      if (langToggleText) langToggleText.textContent = isAr ? 'FR' : 'عربي';
+      if (backLink)       backLink.href = langUrl('index.html');
+
+      renderShared();
+
+      if (pageCategory === 'home') {
+        renderHome();
+      } else {
+        renderCategoryTabs();
+        renderCategoryPage();
+        updateDataSaverBtn();
+      }
+
+      updateAllHtmlLinks();
+    }
+
+    function updateAllHtmlLinks() {
+      document.querySelectorAll('a[href$=".html"]').forEach(function (a) {
+        var base = a.getAttribute('href').split('?')[0];
+        a.href = langUrl(base);
+      });
+    }
+
+    if (langToggleBtn) {
+      langToggleBtn.addEventListener('click', function () {
+        applyLanguage(currentLang === 'fr' ? 'ar' : 'fr');
+      });
+    }
+
+    /* -----------------------------------------------------------------------
+       SHARED HEADER / FOOTER TEXT
+    ----------------------------------------------------------------------- */
+    function renderShared() {
+      var isAr = currentLang === 'ar';
+      if (headerName)     headerName.textContent     = getText(restaurant.name);
+      if (headerBadge)    headerBadge.textContent     = isAr ? 'قائمة رقمية' : 'Digital Menu';
+      if (headerCallText) headerCallText.textContent  = isAr ? 'اتصل' : 'Appeler';
+      if (footerName)     footerName.textContent      = getText(restaurant.name);
+      if (footerSub)      footerSub.textContent       = isAr ? 'امسح واستمتع • قائمة رقمية' : 'Scannez & Profitez • Menu Numérique';
+      if (footerCopyright) {
+        var yr = new Date().getFullYear();
+        footerCopyright.innerHTML = isAr
+          ? '&copy; ' + yr + ' ' + getText(restaurant.name) + '. جميع الحقوق محفوظة.'
+          : '&copy; ' + yr + ' ' + getText(restaurant.name) + '. Tous droits réservés.';
       }
     }
 
-    if (!foundItem || !itemModal) return;
+    /* -----------------------------------------------------------------------
+       HOME PAGE
+    ----------------------------------------------------------------------- */
+    function renderHome() {
+      var isAr = currentLang === 'ar';
+      if (heroSubheading)   heroSubheading.textContent   = isAr ? 'مرحباً بكم في'     : 'Bienvenue à';
+      if (heroTitle)        heroTitle.textContent         = getText(restaurant.name);
+      if (heroTagline)      heroTagline.textContent       = getText(restaurant.tagline);
+      if (seeMenuText)      seeMenuText.textContent       = isAr ? 'عرض القائمة'       : 'Voir le Menu';
+      if (seeMenuBtn)       seeMenuBtn.href               = langUrl('plat-du-jour.html');
+      if (infoHoursTitle)   infoHoursTitle.textContent    = isAr ? 'ساعات العمل'       : "Horaires d'Ouverture";
+      if (infoHours)        infoHours.textContent          = getText(restaurant.hours);
+      if (infoAddressTitle) infoAddressTitle.textContent   = isAr ? 'عنواننا'           : 'Notre Adresse';
+      if (infoAddress)      infoAddress.textContent        = getText(restaurant.address);
+      if (infoPhoneTitle)   infoPhoneTitle.textContent     = isAr ? 'الاتصال المباشر'   : 'Contact Téléphonique';
+      if (infoPhone && restaurant.phone) {
+        infoPhone.textContent = restaurant.phone;
+        infoPhone.href = 'tel:' + restaurant.phone.replace(/\s+/g, '');
+      }
+      if (socialLinksTitle) socialLinksTitle.textContent   = isAr ? 'التواصل الاجتماعي' : 'Réseaux Sociaux';
+    }
 
-    let badgesHtml = '';
-    if (foundItem.badges && foundItem.badges.length > 0) {
-      badgesHtml = '<div class="badges-list" style="margin-bottom:1rem;">';
-      foundItem.badges.forEach(b => {
-        badgesHtml += `<span class="badge badge-chef">${b}</span>`;
+    /* -----------------------------------------------------------------------
+       CATEGORY NAV TABS
+    ----------------------------------------------------------------------- */
+    function renderCategoryTabs() {
+      if (!categoryNavTabs) return;
+      var html = '';
+      categories.forEach(function (cat) {
+        var active = pageCategory === cat.id ? 'active' : '';
+        html += '<a href="' + langUrl(cat.pageUrl) + '" class="tab-btn ' + active + '">' + getText(cat.name) + '</a>';
       });
-      badgesHtml += '</div>';
+      categoryNavTabs.innerHTML = html;
+
+      var activeTab = categoryNavTabs.querySelector('.tab-btn.active');
+      if (activeTab) activeTab.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'center' });
     }
 
-    let imgHtml = '';
-    if (foundItem.image) {
-      imgHtml = `<img src="${foundItem.image}" alt="${foundItem.name}" class="modal-body-img">`;
+    /* -----------------------------------------------------------------------
+       CATEGORY PAGE — ITEM CARDS
+    ----------------------------------------------------------------------- */
+    function renderCategoryPage() {
+      var cat = categories.find(function (c) { return c.id === pageCategory; });
+      if (!cat) return;
+
+      if (categoryTitle) categoryTitle.textContent = getText(cat.name);
+      if (categoryDesc)  categoryDesc.textContent  = getText(cat.description);
+      if (!categoryItemsGrid) return;
+
+      var html       = '';
+      var imageUrls  = [];
+
+      (cat.items || []).forEach(function (item) {
+        html += buildItemCard(item);
+        // Collect image URLs to probe (only in normal mode, only valid strings)
+        if (!dataSaverOn && item.image && typeof item.image === 'string') {
+          imageUrls.push(item.image);
+        }
+      });
+
+      categoryItemsGrid.innerHTML = html;
+
+      // Run the timeout probe once after first normal render
+      if (!dataSaverOn && imageUrls.length > 0) {
+        runImageTimeoutProbe(imageUrls);
+      }
     }
 
-    modalBody.innerHTML = `
-      ${imgHtml}
-      <div class="modal-body-content">
-        <div class="modal-title-row">
-          <h2 class="modal-item-title">${foundItem.name}</h2>
-          <span class="modal-item-price">${foundItem.price}</span>
-        </div>
-        ${badgesHtml}
-        <p class="modal-item-desc">${foundItem.description || 'Prepared fresh with premium hand-selected ingredients.'}</p>
-        ${foundItem.calories ? `<p style="font-size:0.85rem;color:var(--color-text-muted);"><strong>Nutrition:</strong> ${foundItem.calories}</p>` : ''}
-      </div>
-    `;
+    /* -----------------------------------------------------------------------
+       ITEM CARD HTML
+    ----------------------------------------------------------------------- */
+    function buildItemCard(item) {
+      var name  = getText(item.name);
+      var desc  = getText(item.description);
+      var price = item.price || '';
 
-    itemModal.classList.add('open');
-    itemModal.setAttribute('aria-hidden', 'false');
-    document.body.style.overflow = 'hidden';
-  }
+      if (dataSaverOn) {
+        // Text-only — no image slot, content expands cleanly
+        return (
+          '<article class="menu-item-card text-only">' +
+            '<div class="item-content">' +
+              '<h3 class="item-name">' + name + '</h3>' +
+              '<p class="item-desc">' + desc + '</p>' +
+              '<div class="item-footer-row">' +
+                '<span class="item-price">' + price + '</span>' +
+                '<span class="item-badge" aria-hidden="true">&#8250;</span>' +
+              '</div>' +
+            '</div>' +
+          '</article>'
+        );
+      }
 
-  function closeModal() {
-    if (!itemModal) return;
-    itemModal.classList.remove('open');
-    itemModal.setAttribute('aria-hidden', 'true');
-    document.body.style.overflow = '';
-  }
+      // Normal mode: image on top
+      var imgHtml = item.image
+        ? '<div class="item-media"><img src="' + item.image + '" alt="' + name + '" class="item-img" loading="lazy"></div>'
+        : '';
 
-  if (modalClose) modalClose.addEventListener('click', closeModal);
-  if (modalBackdrop) modalBackdrop.addEventListener('click', closeModal);
-  document.addEventListener('keydown', (e) => {
-    if (e.key === 'Escape' && itemModal && itemModal.classList.contains('open')) {
-      closeModal();
+      return (
+        '<article class="menu-item-card">' +
+          imgHtml +
+          '<div class="item-content">' +
+            '<h3 class="item-name">' + name + '</h3>' +
+            '<p class="item-desc">' + desc + '</p>' +
+            '<div class="item-footer-row">' +
+              '<span class="item-price">' + price + '</span>' +
+              '<span class="item-badge" aria-hidden="true">&#8250;</span>' +
+            '</div>' +
+          '</div>' +
+        '</article>'
+      );
     }
+
+    /* -----------------------------------------------------------------------
+       INIT
+    ----------------------------------------------------------------------- */
+    applyLanguage(currentLang);
   });
-
-  /* ==========================================================================
-     6. SEARCH & TAG FILTER EVENT LISTENERS
-     ========================================================================== */
-  if (searchInput) {
-    searchInput.addEventListener('input', (e) => {
-      searchQuery = e.target.value;
-      if (clearSearchBtn) {
-        clearSearchBtn.hidden = searchQuery.trim() === '';
-      }
-      renderMenuItems();
-    });
-  }
-
-  if (clearSearchBtn) {
-    clearSearchBtn.addEventListener('click', () => {
-      searchInput.value = '';
-      searchQuery = '';
-      clearSearchBtn.hidden = true;
-      renderMenuItems();
-      searchInput.focus();
-    });
-  }
-
-  if (tagFiltersContainer) {
-    const tagPills = tagFiltersContainer.querySelectorAll('.tag-pill');
-    tagPills.forEach(pill => {
-      pill.addEventListener('click', () => {
-        tagPills.forEach(p => p.classList.remove('active'));
-        pill.classList.add('active');
-        currentTag = pill.getAttribute('data-tag');
-        renderMenuItems();
-      });
-    });
-  }
-
-  if (resetFilterBtn) {
-    resetFilterBtn.addEventListener('click', () => {
-      if (searchInput) searchInput.value = '';
-      searchQuery = '';
-      currentTag = 'all';
-      if (clearSearchBtn) clearSearchBtn.hidden = true;
-      if (tagFiltersContainer) {
-        const tagPills = tagFiltersContainer.querySelectorAll('.tag-pill');
-        tagPills.forEach(p => p.classList.remove('active'));
-        if (tagPills[0]) tagPills[0].classList.add('active');
-      }
-      renderMenuItems();
-    });
-  }
-
-  /* ==========================================================================
-     7. SCROLL INTERSECTION OBSERVER (Auto Active Tab Update)
-     ========================================================================== */
-  function setupScrollObserver() {
-    const categoryGroups = document.querySelectorAll('.category-group');
-    if (!categoryGroups.length) return;
-
-    const observerOptions = {
-      root: null,
-      rootMargin: '-20% 0px -60% 0px',
-      threshold: 0
-    };
-
-    const observer = new IntersectionObserver((entries) => {
-      entries.forEach(entry => {
-        if (entry.isIntersecting) {
-          const groupTarget = entry.target;
-          const catId = groupTarget.id.replace('cat-', '');
-          setActiveCategoryTab(catId);
-        }
-      });
-    }, observerOptions);
-
-    categoryGroups.forEach(group => observer.observe(group));
-  }
-
-  /* ==========================================================================
-     8. INITIALIZATION
-     ========================================================================== */
-  function init() {
-    applyDynamicTheme(restaurant.colors);
-    renderRestaurantDetails();
-    renderCategoryTabs();
-    renderMenuItems();
-    setupScrollObserver();
-
-    // Check for deep link hash (e.g. index.html#menu or index.html#starters)
-    if (window.location.hash) {
-      setTimeout(() => {
-        const hash = window.location.hash.substring(1);
-        const targetElement = document.getElementById(hash) || document.getElementById(`cat-${hash}`);
-        if (targetElement) {
-          targetElement.scrollIntoView({ behavior: 'smooth' });
-        }
-      }, 300);
-    }
-  }
-
-  // Fire App Initialization
-  init();
-});
+})();
