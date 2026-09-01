@@ -1,0 +1,215 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0">
+  <meta name="description" content="Digital restaurant menu - Scan QR code on your table to view our fresh dishes, starters, desserts, and craft beverages.">
+  <meta name="theme-color" content="#141416">
+  <title>Restaurant Menu</title>
+  
+  <!-- Preconnect to Google Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,500;0,600;0,700;1,400&family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+  
+  <!-- Stylesheet -->
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+  <!-- =========================================================================
+       1. HEADER (Sticky on scroll, mobile friendly)
+       ========================================================================= -->
+  <header class="site-header" id="site-header">
+    <div class="container header-container">
+      <a href="#hero" class="brand-link" id="brand-link">
+        <img id="header-logo" src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='1' height='1'%3E%3C/svg%3E" alt="Restaurant Logo" class="brand-logo" width="42" height="42">
+        <div class="brand-text">
+          <span id="header-name" class="brand-name">Restaurant</span>
+          <span class="brand-badge">Digital Menu</span>
+        </div>
+      </a>
+
+      <div class="header-actions">
+        <a id="header-call-btn" href="tel:" class="header-action-btn call-btn" aria-label="Call Restaurant">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"/></svg>
+          <span class="btn-text">Call Table</span>
+        </a>
+      </div>
+    </div>
+  </header>
+
+  <!-- =========================================================================
+       2. HERO SECTION (Tagline, background image or color)
+       ========================================================================= -->
+  <section class="hero-section" id="hero">
+    <div class="hero-backdrop" id="hero-backdrop"></div>
+    <div class="hero-overlay"></div>
+    <div class="container hero-content">
+      <span class="hero-subheading">Welcome To</span>
+      <h1 id="hero-title" class="hero-title">Restaurant Name</h1>
+      <p id="hero-tagline" class="hero-tagline">Short tagline or welcome message</p>
+      
+      <div class="hero-buttons">
+        <a href="#menu" class="btn btn-primary">
+          <span>Explore Menu</span>
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M12 5v14M19 12l-7 7-7-7"/></svg>
+        </a>
+        <a href="#info" class="btn btn-outline">
+          <span>Hours & Location</span>
+        </a>
+      </div>
+    </div>
+  </section>
+
+  <!-- =========================================================================
+       3. MENU SECTION (Categories, Search, Cards dynamically rendered via JS)
+       ========================================================================= -->
+  <section class="menu-section" id="menu">
+    
+    <!-- Sticky Control Panel: Search & Category Navigation -->
+    <div class="menu-controls-sticky">
+      <div class="container">
+        
+        <!-- Search & Filter Row -->
+        <div class="search-filter-wrapper">
+          <div class="search-box">
+            <svg class="search-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>
+            <input type="text" id="search-input" placeholder="Search menu items..." aria-label="Search menu items">
+            <button id="clear-search-btn" class="clear-search-btn" aria-label="Clear Search" hidden>&times;</button>
+          </div>
+
+          <!-- Tag Filters (Dietary/Features) -->
+          <div class="tag-filters" id="tag-filters">
+            <button class="tag-pill active" data-tag="all">All</button>
+            <button class="tag-pill" data-tag="Chef Special">⭐ Chef's Special</button>
+            <button class="tag-pill" data-tag="Vegetarian">🌱 Vegetarian</button>
+            <button class="tag-pill" data-tag="Vegan">🥬 Vegan</button>
+            <button class="tag-pill" data-tag="Gluten Free">🌾 Gluten Free</button>
+            <button class="tag-pill" data-tag="Spicy">🌶️ Spicy</button>
+          </div>
+        </div>
+
+        <!-- Horizontal Scrollable Category Tabs -->
+        <nav class="category-tabs" id="category-tabs" aria-label="Menu categories">
+          <!-- Dynamically populated by script.js -->
+        </nav>
+      </div>
+    </div>
+
+    <!-- Main Dynamic Menu Items Container -->
+    <div class="container menu-display">
+      <div id="menu-container" class="menu-container">
+        <!-- Rendered dynamically by script.js from menu-data.js -->
+      </div>
+      
+      <div id="no-results" class="no-results" hidden>
+        <div class="no-results-icon">🔍</div>
+        <h3>No matching dishes found</h3>
+        <p>Try searching for something else or reset your filter.</p>
+        <button id="reset-filter-btn" class="btn btn-outline">Reset Search</button>
+      </div>
+    </div>
+  </section>
+
+  <!-- =========================================================================
+       4. INFO SECTION (Hours, Address, Phone, Google Maps iframe)
+       ========================================================================= -->
+  <section class="info-section" id="info">
+    <div class="container">
+      <div class="info-grid">
+        
+        <div class="info-card">
+          <h2 class="info-heading">Information & Hours</h2>
+          
+          <div class="info-item">
+            <div class="info-icon">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+            </div>
+            <div>
+              <h3>Opening Hours</h3>
+              <p id="info-hours">Mon - Sun: 11:30 AM - 11:00 PM</p>
+            </div>
+          </div>
+
+          <div class="info-item">
+            <div class="info-icon">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0Z"/><circle cx="12" cy="10" r="3"/></svg>
+            </div>
+            <div>
+              <h3>Our Address</h3>
+              <p id="info-address">12 Rue des Délices, Hydra, Algiers</p>
+            </div>
+          </div>
+
+          <div class="info-item">
+            <div class="info-icon">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"/></svg>
+            </div>
+            <div>
+              <h3>Direct Contact</h3>
+              <a id="info-phone" href="tel:" class="contact-link">+213 550 12 34 56</a>
+            </div>
+          </div>
+
+          <!-- Quick Action Buttons -->
+          <div class="info-actions">
+            <a id="info-call-action" href="tel:" class="btn btn-primary">
+              <span>Call Staff / Order</span>
+            </a>
+            <a id="info-map-action" href="#map-box" class="btn btn-outline">
+              <span>Get Directions</span>
+            </a>
+          </div>
+        </div>
+
+        <!-- Google Maps Embed Container -->
+        <div class="map-card" id="map-box">
+          <iframe id="google-map-iframe" src="" width="100%" height="100%" style="border:0;" allowfullscreen="" loading="lazy" referrerpolicy="no-referrer-when-downgrade" title="Restaurant Map Location"></iframe>
+        </div>
+
+      </div>
+    </div>
+  </section>
+
+  <!-- =========================================================================
+       5. FOOTER (Social links & small credit line)
+       ========================================================================= -->
+  <footer class="site-footer">
+    <div class="container footer-content">
+      <div class="footer-brand">
+        <span id="footer-restaurant-name" class="footer-name">Restaurant</span>
+        <p class="footer-sub">Scan & Enjoy • Pure Digital Menu Experience</p>
+      </div>
+
+      <div class="social-links" id="social-links">
+        <!-- Rendered dynamically by script.js -->
+      </div>
+
+      <div class="footer-bottom">
+        <p>&copy; <span id="copyright-year">2026</span> <span id="footer-copy-name">Restaurant</span>. All rights reserved.</p>
+        <p class="credit-line">Powered by QR Web Menu</p>
+      </div>
+    </div>
+  </footer>
+
+  <!-- =========================================================================
+       ITEM DETAIL MODAL (Quick View on card click)
+       ========================================================================= -->
+  <div id="item-modal" class="modal" aria-hidden="true" role="dialog">
+    <div class="modal-backdrop" id="modal-backdrop"></div>
+    <div class="modal-card">
+      <button id="modal-close" class="modal-close" aria-label="Close Modal">&times;</button>
+      <div id="modal-body" class="modal-body">
+        <!-- Populated dynamically via JS -->
+      </div>
+    </div>
+  </div>
+
+  <!-- =========================================================================
+       SCRIPTS (Must load menu-data.js first, then script.js)
+       ========================================================================= -->
+  <script src="menu-data.js"></script>
+  <script src="script.js"></script>
+</body>
+</html>
