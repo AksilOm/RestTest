@@ -20,6 +20,11 @@
       return;
     }
 
+    // sheet-config.js must also be present for the async loader
+    if (typeof loadMenuData !== 'function') {
+      console.error('sheet-config.js must be loaded before script.js');
+    }
+
     /* -----------------------------------------------------------------------
        CONSTANTS
     ----------------------------------------------------------------------- */
@@ -53,7 +58,7 @@
       }
     })();
 
-    var pageCategory = document.body.dataset.category || 'home';
+    var pageCategory = urlParams.get('cat') || document.body.dataset.category || 'home';
     var isMenuPage   = pageCategory !== 'home';
 
     // Image timeout probe runs once; flag prevents repeating
@@ -69,7 +74,8 @@
     }
 
     function langUrl(base) {
-      return currentLang === 'ar' ? base + '?lang=ar' : base;
+      if (currentLang !== 'ar') return base;
+      return base.indexOf('?') !== -1 ? base + '&lang=ar' : base + '?lang=ar';
     }
 
     /* -----------------------------------------------------------------------
@@ -327,8 +333,9 @@
     ----------------------------------------------------------------------- */
     function renderCategoryTabs() {
       if (!categoryNavTabs) return;
+      var cats = window.categories || categories;
       var html = '';
-      categories.forEach(function (cat) {
+      cats.forEach(function (cat) {
         var active = pageCategory === cat.id ? 'active' : '';
         html += '<a href="' + langUrl(cat.pageUrl) + '" class="tab-btn ' + active + '">' + getText(cat.name) + '</a>';
       });
@@ -342,7 +349,8 @@
        CATEGORY PAGE — ITEM CARDS
     ----------------------------------------------------------------------- */
     function renderCategoryPage() {
-      var cat = categories.find(function (c) { return c.id === pageCategory; });
+      var cats = window.categories || categories;
+      var cat = cats.find(function (c) { return c.id === pageCategory; });
       if (!cat) return;
 
       if (categoryTitle) categoryTitle.textContent = getText(cat.name);
@@ -413,8 +421,40 @@
     }
 
     /* -----------------------------------------------------------------------
+       LOADING STATE HELPERS
+    ----------------------------------------------------------------------- */
+    function showLoadingState() {
+      if (!categoryItemsGrid) return;
+      var isAr = currentLang === 'ar';
+      var msg  = isAr ? 'جاري تحميل القائمة...' : 'Chargement du menu...';
+      categoryItemsGrid.innerHTML =
+        '<div class="menu-loading-state" id="menu-loading-state" aria-live="polite">' +
+          '<span class="menu-loading-spinner" aria-hidden="true"></span>' +
+          '<span>' + msg + '</span>' +
+        '</div>';
+    }
+
+    function hideLoadingState() {
+      var el = document.getElementById('menu-loading-state');
+      if (el && el.parentNode) el.parentNode.removeChild(el);
+    }
+
+    /* -----------------------------------------------------------------------
        INIT
     ----------------------------------------------------------------------- */
-    applyLanguage(currentLang);
+    if (isMenuPage && typeof loadMenuData === 'function') {
+      // Apply language first (tabs, header, footer) but show loading in grid
+      applyLanguage(currentLang);
+      showLoadingState();
+
+      loadMenuData().then(function () {
+        hideLoadingState();
+        renderCategoryTabs();   // re-render tabs with live sheet categories
+        renderCategoryPage();   // render items from live sheet data
+      });
+    } else {
+      // Home page or no sheet-config.js — render synchronously as before
+      applyLanguage(currentLang);
+    }
   });
 })();
