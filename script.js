@@ -86,7 +86,6 @@
     var langToggleText   = document.getElementById('lang-toggle-text');
     var headerName       = document.getElementById('header-name');
     var headerBadge      = document.getElementById('header-badge');
-    var headerCallText   = document.getElementById('header-call-text');
     var backLink         = document.getElementById('back-link');
     var footerName       = document.getElementById('footer-restaurant-name');
     var footerSub        = document.getElementById('footer-sub');
@@ -113,6 +112,13 @@
     var categoryItemsGrid = document.getElementById('category-items-grid');
     var dataSaverBtn      = document.getElementById('data-saver-btn');
     var dataSaverText     = document.getElementById('data-saver-text');
+    // Nav carousel arrows (static in HTML, wired here)
+    var navArrowLeft  = document.getElementById('nav-arrow-left');
+    var navArrowRight = document.getElementById('nav-arrow-right');
+
+    // Nav carousel arrows (injected dynamically)
+    // (kept for reference — actual els now come from static HTML)
+
 
     /* -----------------------------------------------------------------------
        TOAST NOTIFICATION (eco mode auto-activated)
@@ -295,7 +301,6 @@
       var isAr = currentLang === 'ar';
       if (headerName)     headerName.textContent     = getText(restaurant.name);
       if (headerBadge)    headerBadge.textContent     = isAr ? 'قائمة رقمية' : 'Digital Menu';
-      if (headerCallText) headerCallText.textContent  = isAr ? 'اتصل' : 'Appeler';
       if (footerName)     footerName.textContent      = getText(restaurant.name);
       if (footerSub)      footerSub.textContent       = isAr ? 'امسح واستمتع • قائمة رقمية' : 'Scannez & Profitez • Menu Numérique';
       if (footerCopyright) {
@@ -329,7 +334,7 @@
     }
 
     /* -----------------------------------------------------------------------
-       CATEGORY NAV TABS
+       CATEGORY NAV TABS + CAROUSEL ARROWS
     ----------------------------------------------------------------------- */
     function renderCategoryTabs() {
       if (!categoryNavTabs) return;
@@ -341,8 +346,66 @@
       });
       categoryNavTabs.innerHTML = html;
 
+      // Scroll active tab into full view and update arrow states
       var activeTab = categoryNavTabs.querySelector('.tab-btn.active');
-      if (activeTab) activeTab.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'center' });
+      if (activeTab) {
+        setTimeout(function () {
+          activeTab.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'center' });
+          updateNavArrows();
+        }, 60);
+      } else {
+        updateNavArrows();
+      }
+    }
+
+    /* -----------------------------------------------------------------------
+       CAROUSEL — ARROW LOGIC
+    ----------------------------------------------------------------------- */
+    var SCROLL_STEP = 180; // px per arrow click
+
+    function updateNavArrows() {
+      if (!categoryNavTabs || !navArrowLeft || !navArrowRight) return;
+      var el    = categoryNavTabs;
+      var isRtl = document.documentElement.getAttribute('dir') === 'rtl';
+
+      // scrollLeft can be negative in RTL in some browsers
+      var scrollLeft = Math.abs(el.scrollLeft);
+      var maxScroll  = el.scrollWidth - el.clientWidth;
+
+      var atStart = scrollLeft <= 2;
+      var atEnd   = maxScroll <= 0 || scrollLeft >= maxScroll - 2;
+
+      // In RTL the visual "left" arrow scrolls toward the end
+      if (isRtl) {
+        navArrowLeft.disabled  = atEnd;
+        navArrowRight.disabled = atStart;
+        navArrowLeft.setAttribute('aria-disabled',  atEnd   ? 'true' : 'false');
+        navArrowRight.setAttribute('aria-disabled', atStart ? 'true' : 'false');
+      } else {
+        navArrowLeft.disabled  = atStart;
+        navArrowRight.disabled = atEnd;
+        navArrowLeft.setAttribute('aria-disabled',  atStart ? 'true' : 'false');
+        navArrowRight.setAttribute('aria-disabled', atEnd   ? 'true' : 'false');
+      }
+    }
+
+    function initNavCarousel() {
+      if (!categoryNavTabs || !navArrowLeft || !navArrowRight) return;
+
+      navArrowLeft.addEventListener('click', function () {
+        var isRtl = document.documentElement.getAttribute('dir') === 'rtl';
+        categoryNavTabs.scrollBy({ left: isRtl ? SCROLL_STEP : -SCROLL_STEP, behavior: 'smooth' });
+      });
+
+      navArrowRight.addEventListener('click', function () {
+        var isRtl = document.documentElement.getAttribute('dir') === 'rtl';
+        categoryNavTabs.scrollBy({ left: isRtl ? -SCROLL_STEP : SCROLL_STEP, behavior: 'smooth' });
+      });
+
+      categoryNavTabs.addEventListener('scroll', updateNavArrows, { passive: true });
+
+      // Set initial state
+      updateNavArrows();
     }
 
     /* -----------------------------------------------------------------------
@@ -445,6 +508,7 @@
     if (isMenuPage && typeof loadMenuData === 'function') {
       // Apply language first (tabs, header, footer) but show loading in grid
       applyLanguage(currentLang);
+      initNavCarousel();   // wire arrows once DOM is ready
       showLoadingState();
 
       loadMenuData().then(function () {
