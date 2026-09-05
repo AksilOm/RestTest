@@ -278,6 +278,10 @@
         updateDataSaverBtn();
       }
 
+      if (currentOpenItem) {
+        openItemModal(currentOpenItem);
+      }
+
       updateAllHtmlLinks();
     }
 
@@ -409,6 +413,124 @@
     }
 
     /* -----------------------------------------------------------------------
+       ITEM DETAIL MODAL WINDOW (POPUP)
+    ----------------------------------------------------------------------- */
+    var currentOpenItem = null;
+
+    function ensureItemModal() {
+      var modal = document.getElementById('item-detail-modal');
+      if (modal) return modal;
+
+      modal = document.createElement('div');
+      modal.id = 'item-detail-modal';
+      modal.className = 'item-modal-backdrop';
+      modal.setAttribute('role', 'dialog');
+      modal.setAttribute('aria-modal', 'true');
+      modal.setAttribute('aria-hidden', 'true');
+
+      modal.innerHTML =
+        '<div class="item-modal-dialog" id="item-modal-dialog">' +
+          '<button class="modal-close-btn" id="modal-close-btn" type="button" aria-label="Fermer">' +
+            '<span>✕</span>' +
+          '</button>' +
+          '<div class="modal-media" id="modal-media-wrapper">' +
+            '<img id="modal-img" class="modal-img" src="" alt="">' +
+          '</div>' +
+          '<div class="modal-body">' +
+            '<div class="modal-header-row">' +
+              '<h2 class="modal-title" id="modal-title"></h2>' +
+              '<span class="modal-price" id="modal-price"></span>' +
+            '</div>' +
+            '<div class="modal-tags" id="modal-tags"></div>' +
+            '<p class="modal-desc" id="modal-desc"></p>' +
+          '</div>' +
+        '</div>';
+
+      document.body.appendChild(modal);
+
+      var closeBtn = document.getElementById('modal-close-btn');
+      if (closeBtn) {
+        closeBtn.addEventListener('click', closeItemModal);
+      }
+
+      modal.addEventListener('click', function (e) {
+        if (e.target === modal) {
+          closeItemModal();
+        }
+      });
+
+      return modal;
+    }
+
+    function openItemModal(item) {
+      if (!item) return;
+      var modal = ensureItemModal();
+      currentOpenItem = item;
+
+      var titleEl      = document.getElementById('modal-title');
+      var priceEl      = document.getElementById('modal-price');
+      var descEl       = document.getElementById('modal-desc');
+      var mediaWrapper = document.getElementById('modal-media-wrapper');
+      var imgEl        = document.getElementById('modal-img');
+      var tagsEl       = document.getElementById('modal-tags');
+      var closeBtn     = document.getElementById('modal-close-btn');
+
+      var isAr = currentLang === 'ar';
+      if (closeBtn) {
+        closeBtn.setAttribute('aria-label', isAr ? 'إغلاق' : 'Fermer');
+      }
+
+      var name  = getText(item.name);
+      var desc  = getText(item.description);
+      var price = item.price || '';
+
+      if (titleEl) titleEl.textContent = name;
+      if (priceEl) priceEl.textContent = price;
+      if (descEl)  descEl.textContent  = desc;
+
+      if (item.image && typeof item.image === 'string') {
+        imgEl.src = item.image;
+        imgEl.alt = name;
+        mediaWrapper.style.display = 'block';
+      } else {
+        mediaWrapper.style.display = 'none';
+      }
+
+      if (tagsEl) {
+        var tagsHtml = '';
+        if (item.subcategory) {
+          tagsHtml += '<span class="modal-tag-badge">' + item.subcategory + '</span>';
+        }
+        if (Array.isArray(item.tags)) {
+          item.tags.forEach(function (tag) {
+            if (tag) tagsHtml += '<span class="modal-tag-badge">' + tag + '</span>';
+          });
+        }
+        tagsEl.innerHTML = tagsHtml;
+      }
+
+      modal.classList.add('active');
+      modal.setAttribute('aria-hidden', 'false');
+      document.body.classList.add('modal-open');
+    }
+
+    function closeItemModal() {
+      var modal = document.getElementById('item-detail-modal');
+      if (!modal) return;
+
+      modal.classList.remove('active');
+      modal.setAttribute('aria-hidden', 'true');
+      document.body.classList.remove('modal-open');
+      currentOpenItem = null;
+    }
+
+    document.addEventListener('keydown', function (e) {
+      if (e.key === 'Escape' || e.key === 'Esc') {
+        closeItemModal();
+      }
+    });
+
+    /* -----------------------------------------------------------------------
        CATEGORY PAGE — ITEM CARDS
     ----------------------------------------------------------------------- */
     function renderCategoryPage() {
@@ -422,8 +544,9 @@
 
       var html       = '';
       var imageUrls  = [];
+      var itemsList  = cat.items || [];
 
-      (cat.items || []).forEach(function (item) {
+      itemsList.forEach(function (item) {
         html += buildItemCard(item);
         // Collect image URLs to probe (only in normal mode, only valid strings)
         if (!dataSaverOn && item.image && typeof item.image === 'string') {
@@ -432,6 +555,17 @@
       });
 
       categoryItemsGrid.innerHTML = html;
+
+      // Wire card click events to open item detail popup window
+      var cardEls = categoryItemsGrid.querySelectorAll('.menu-item-card');
+      cardEls.forEach(function (cardEl, idx) {
+        var item = itemsList[idx];
+        if (item) {
+          cardEl.addEventListener('click', function () {
+            openItemModal(item);
+          });
+        }
+      });
 
       // Run the timeout probe once after first normal render
       if (!dataSaverOn && imageUrls.length > 0) {
