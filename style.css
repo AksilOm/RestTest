@@ -216,6 +216,36 @@ button {
   color: var(--color-primary);
 }
 
+/* ⚡ Éco button — lives in the dark header on menu pages */
+.eco-header-btn {
+  background-color: var(--color-btn-dark);
+  color: #ffffff;
+  border: 1px solid rgba(212, 175, 55, 0.4);
+  padding: 6px 12px;
+  border-radius: var(--radius-pill);
+  font-size: 0.82rem;
+  font-weight: 700;
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  white-space: nowrap;
+  flex-shrink: 0;
+  transition: var(--transition-fast);
+}
+
+.eco-header-btn:hover,
+.eco-header-btn:active {
+  background-color: var(--color-accent);
+  color: var(--color-primary);
+  border-color: var(--color-accent);
+}
+
+.eco-header-btn.active {
+  background-color: var(--color-accent);
+  color: var(--color-primary);
+  border-color: var(--color-accent);
+}
+
 /* ----------------------------------------------------------------------------
    4. HOME PAGE HERO SECTION
    ---------------------------------------------------------------------------- */
@@ -317,6 +347,7 @@ button {
 }
 
 /* Fade-out edges hint that more tabs exist */
+/* Only apply the RIGHT-side fade — the left fade was clipping the first tab label */
 .nav-carousel-wrapper::before,
 .nav-carousel-wrapper::after {
   content: '';
@@ -329,10 +360,7 @@ button {
   transition: opacity var(--transition-fast);
 }
 .nav-carousel-wrapper::before {
-  inset-inline-start: 28px;
-  background: linear-gradient(to inline-end, var(--color-nav-bg), transparent);
-  /* Logical properties fallback */
-  background: linear-gradient(to right, var(--color-nav-bg), transparent);
+  display: none;  /* left fade removed — was clipping first tab text */
 }
 [dir="rtl"] .nav-carousel-wrapper::before {
   background: linear-gradient(to left, var(--color-nav-bg), transparent);
@@ -351,6 +379,7 @@ button {
   gap: 1.5rem;
   overflow-x: auto;
   padding-block: 10px 12px;
+  padding-inline-start: 6px;  /* ensure first tab label clears the left arrow */
   scroll-behavior: smooth;
   scrollbar-width: none;
   -ms-overflow-style: none;
@@ -406,6 +435,7 @@ button {
 
 .tab-btn {
   white-space: nowrap;
+  min-width: max-content;   /* prevents any label from being cut off */
   display: inline-block;
   position: relative;
   font-size: 0.92rem;
@@ -495,8 +525,9 @@ button {
   padding: 20px 18px;
   box-shadow: var(--shadow-card);
   display: flex;
-  align-items: flex-start;
+  align-items: center;      /* vertically centre icon + text row */
   gap: 14px;
+  min-height: 80px;         /* ensures all cards have a consistent baseline height */
 }
 
 .home-info-icon {
@@ -526,9 +557,9 @@ button {
 .social-links-bar {
   display: flex;
   align-items: center;
-  justify-content: center;
-  gap: 12px;
-  margin-top: 10px;
+  flex-wrap: wrap;          /* allow buttons to wrap on narrow screens */
+  gap: 8px;
+  margin-top: 6px;
 }
 
 .social-btn {
